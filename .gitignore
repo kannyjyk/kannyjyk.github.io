@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Python (citation updater)
+__pycache__/
+*.py[cod]
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Environments, logs, scratch
+.venv/
+venv/
+*.log

@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yukang Jiang · Biostatistics & Medical AI</title>
+<style>
+/* ============ RESET & TOKENS ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070b16; --bg2:#0b1120; --panel:rgba(18,26,46,.55);
+  --ink:#e9f0fb; --muted:#93a4c3; --line:rgba(120,150,200,.16);
+  --cyan:#22d3ee; --violet:#a855f7; --pink:#f472b6; --pika:#ffd23f; --pika2:#ffb300;
+  --glow:0 0 24px rgba(34,211,238,.35);
+  --radius:20px; --maxw:1080px;
+  --grad:linear-gradient(120deg,var(--cyan),var(--violet) 45%,var(--pink) 90%);
+}
+html[data-theme="light"]{
+  --bg:#eef3fb; --bg2:#e4ecf8; --panel:rgba(255,255,255,.7);
+  --ink:#111a2e; --muted:#4a5a78; --line:rgba(40,70,120,.16);
+  --glow:0 0 24px rgba(34,120,200,.22);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.65;
+  overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+a{color:inherit;text-decoration:none}
+
+/* ============ BACKGROUND FX ============ */
+#bgfx{position:fixed;inset:0;z-index:-3;background:
+  radial-gradient(1100px 700px at 78% -8%,rgba(168,85,247,.18),transparent 60%),
+  radial-gradient(900px 600px at 8% 12%,rgba(34,211,238,.16),transparent 60%),
+  radial-gradient(800px 800px at 60% 105%,rgba(244,114,182,.13),transparent 60%),
+  var(--bg);}
+.aurora{position:fixed;border-radius:50%;filter:blur(70px);opacity:.5;z-index:-2;mix-blend-mode:screen;animation:drift 22s ease-in-out infinite}
+.a1{width:420px;height:420px;background:var(--cyan);top:-80px;left:-60px}
+.a2{width:380px;height:380px;background:var(--violet);top:30%;right:-90px;animation-delay:-7s}
+.a3{width:340px;height:340px;background:var(--pika);bottom:-100px;left:35%;opacity:.28;animation-delay:-13s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,50px) scale(1.12)}66%{transform:translate(-30px,20px) scale(.94)}}
+#grid{position:fixed;inset:0;z-index:-2;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:46px 46px;mask:radial-gradient(circle at 50% 30%,#000 0%,transparent 78%);
+  -webkit-mask:radial-gradient(circle at 50% 30%,#000 0%,transparent 78%);opacity:.5}
+canvas#stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
+#cursor-glow{position:fixed;width:340px;height:340px;border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(34,211,238,.10),transparent 65%);transform:translate(-50%,-50%);transition:opacity .3s;opacity:0}
+
+/* ============ SCROLL PROGRESS ============ */
+#progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;background:var(--grad);box-shadow:0 0 12px var(--cyan)}
+
+/* ============ NAV ============ */
+nav{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;
+  display:flex;align-items:center;gap:4px;padding:8px 10px;border:1px solid var(--line);
+  border-radius:999px;background:var(--panel);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 8px 30px rgba(0,0,0,.28);max-width:94vw;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav a.navlink{padding:7px 13px;border-radius:999px;font-size:13.5px;color:var(--muted);white-space:nowrap;transition:.2s;font-weight:500}
+nav a.navlink:hover{color:var(--ink);background:rgba(120,150,200,.2);text-shadow:0 0 12px rgba(34,211,238,.55)}
+nav a.navlink.active{color:var(--bg);background:var(--pika);font-weight:700}
+html[data-theme="dark"] nav a.navlink.active{color:#0a0f1e}
+.nav-ctrl{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);
+  cursor:pointer;font-size:15px;display:grid;place-items:center;transition:.2s;flex:0 0 auto}
+.nav-ctrl:hover{background:rgba(120,150,200,.15);transform:rotate(-8deg)}
+
+/* ============ LAYOUT ============ */
+main{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+section{padding:74px 0;scroll-margin-top:90px}
+.eyebrow{font-size:12.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:26px;height:2px;background:var(--grad);border-radius:2px}
+h2.title{font-size:clamp(26px,4.4vw,40px);font-weight:800;letter-spacing:-.02em;margin-bottom:26px;line-height:1.1}
+.reveal{opacity:0;transform:translateY(26px);transition:.7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* ============ HERO ============ */
+.hero{position:relative;min-height:100vh;display:grid;grid-template-columns:1.15fr .85fr;align-items:center;gap:20px;padding-top:96px}
+.term-chip{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;padding:6px 13px;border:1px solid var(--line);
+  border-radius:999px;background:var(--panel);color:var(--muted);margin-bottom:22px}
+.dot{width:9px;height:9px;border-radius:50%;background:#33d685;box-shadow:0 0 10px #33d685;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.hero h1{font-size:clamp(40px,7.6vw,80px);font-weight:900;letter-spacing:-.035em;line-height:.98;margin-bottom:6px}
+.hero h1 .gr{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;background-size:200% auto;animation:hue 6s linear infinite}
+@keyframes hue{to{background-position:200% center}}
+.hero h1 .glitch{cursor:pointer;display:inline-block}
+.hero h1 .glitch:hover{animation:glitch .32s steps(2) infinite}
+@keyframes glitch{0%{text-shadow:2px 0 var(--pink),-2px 0 var(--cyan)}50%{text-shadow:-2px 0 var(--pika),2px 0 var(--violet);transform:translateX(1px)}100%{text-shadow:none}}
+.role{font-size:clamp(18px,2.6vw,24px);font-weight:600;color:var(--ink);min-height:1.4em;margin:14px 0 6px}
+.role .tw{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.caret{display:inline-block;width:3px;height:1.05em;background:var(--pika);margin-left:3px;vertical-align:-2px;animation:blinkcaret 1s steps(1) infinite}
+@keyframes blinkcaret{50%{opacity:0}}
+.sub{color:var(--muted);max-width:46ch;margin:14px 0 26px;font-size:16px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;font-weight:700;font-size:14.5px;cursor:pointer;border:1px solid transparent;transition:.22s}
+.btn-primary{background:var(--pika);color:#1a1300;box-shadow:0 8px 26px rgba(255,210,63,.28)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(255,210,63,.42)}
+.btn-ghost{border-color:var(--line);color:var(--ink);background:var(--panel)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-3px);box-shadow:var(--glow)}
+.socials{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.socials a{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;color:var(--muted);background:var(--panel);transition:.22s}
+.socials a:hover{color:var(--ink);border-color:var(--cyan);transform:translateY(-3px) rotate(-6deg);box-shadow:var(--glow)}
+.socials svg{width:18px;height:18px}
+
+/* ============ HERO EMBLEM (holographic Poké Ball core) ============ */
+.stage{position:relative;display:grid;place-items:center;height:100%}
+.court{position:relative;width:360px;max-width:84vw;aspect-ratio:1/1;display:grid;place-items:center}
+.ring{position:absolute;inset:8%;border-radius:50%;border:1px dashed rgba(120,150,200,.24);animation:spin 26s linear infinite}
+.ring.r2{inset:-2%;border-style:solid;border-color:transparent;border-top-color:var(--cyan);border-right-color:var(--violet);opacity:.5;animation-duration:16s}
+.ring.r3{inset:16%;border-color:rgba(255,210,63,.22);animation-direction:reverse;animation-duration:22s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.halo{position:absolute;width:50%;height:50%;border-radius:50%;filter:blur(52px);background:radial-gradient(circle,rgba(255,210,63,.18),transparent 70%);animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.12);opacity:.7}}
+.orb{position:absolute;font-size:28px;z-index:4;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));animation:orbit 7s ease-in-out infinite}
+.orb.o1{top:6%;left:8%;animation-delay:-1s}
+.orb.o2{top:16%;right:4%;font-size:24px;animation-delay:-3.5s}
+.orb.o3{top:2%;right:28%;font-size:26px;animation-delay:-5s}
+@keyframes orbit{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-16px) rotate(10deg)}}
+.pokeball{position:relative;z-index:3;width:88px;height:88px;cursor:pointer;animation:pokefloat 6s ease-in-out infinite}
+.pb-body{position:absolute;inset:0;border-radius:50%;border:4px solid #14161c;opacity:.94;transform-origin:center;
+  background:linear-gradient(#e0353d 0 48%,#14161c 48% 56%,#eef0f2 56% 100%);
+  box-shadow:0 10px 24px rgba(0,0,0,.36),inset -5px -7px 12px rgba(0,0,0,.24),inset 5px 5px 10px rgba(255,255,255,.18)}
+.pokeball:hover .pb-body{opacity:1}
+.pb-body.shaking{animation:ballshake 1.25s ease-in-out}
+.pb-body.opening{animation:pbpop .5s ease}
+.pb-btn{position:absolute;top:50%;left:50%;width:24px;height:24px;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
+  background:#fff;border:4px solid #14161c;box-shadow:0 0 0 2px #14161c,0 0 10px rgba(255,255,255,.6);animation:pbpulse 2.6s ease-in-out infinite}
+.pb-flash{position:absolute;inset:-18%;border-radius:50%;pointer-events:none;z-index:3;opacity:0;
+  background:radial-gradient(circle,rgba(255,255,255,.5),rgba(130,220,255,.28) 45%,transparent 72%)}
+.pb-body.opening .pb-flash{animation:pbflash .55s ease-out}
+.pb-wave{position:fixed;pointer-events:none;z-index:69;border-radius:50%;transform:translate(-50%,-50%);
+  border:3px solid var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pbwave .6s ease-out forwards}
+@keyframes pbwave{0%{width:16px;height:16px;opacity:.85}100%{width:190px;height:190px;opacity:0}}
+.burst{position:fixed;pointer-events:none;z-index:70;transform:translate(-50%,-50%);animation:burstfly .8s ease-out forwards}
+@keyframes burstfly{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}18%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--bx,0px)),calc(-50% + var(--by,0px))) scale(1)}}
+@keyframes pokefloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pbpulse{50%{box-shadow:0 0 0 3px #14161c,0 0 24px rgba(255,255,255,1)}}
+@keyframes pbpop{0%,100%{transform:scale(1)}40%{transform:scale(1.14)}}
+@keyframes pbflash{0%{opacity:0;transform:scale(.5)}35%{opacity:.6}100%{opacity:0;transform:scale(1.3)}}
+@keyframes ballshake{0%,30%,62%,100%{transform:rotate(0)}
+  10%{transform:rotate(-16deg)}20%{transform:rotate(13deg)}
+  42%{transform:rotate(-14deg)}52%{transform:rotate(12deg)}
+  74%{transform:rotate(-10deg)}84%{transform:rotate(9deg)}92%{transform:rotate(-4deg)}}
+
+/* ============ CORNER PLAYGROUND (Pokémon wandering + Poké Ball release/recall) ============ */
+#playground{position:fixed;left:10px;bottom:6px;width:min(820px,76vw);height:170px;z-index:40;pointer-events:none}
+.wpet{position:absolute;left:0;bottom:6px;width:84px;pointer-events:auto;cursor:pointer;will-change:transform;transform-origin:bottom center}
+.wpet-shadow{position:absolute;left:50%;bottom:0;width:56px;height:12px;transform:translateX(-50%);z-index:-1;
+  background:radial-gradient(ellipse,rgba(0,0,0,.5),transparent 70%);border-radius:50%;animation:shadowpulse .5s ease-in-out infinite}
+.wpet-hop{transform-origin:bottom center}
+.wpet-hop.hopping{animation:hopUp .5s ease}
+.wpet-in{transform-origin:bottom center}
+.wpet.moving .wpet-in{animation:waddle .5s ease-in-out infinite}
+.wpet svg{width:100%;height:auto;display:block;overflow:visible;filter:drop-shadow(0 6px 7px rgba(0,0,0,.4))}
+.wpet:hover .cheek{fill:#ff3b3b}
+.wspeech{position:absolute;bottom:100%;left:50%;transform:translateX(-50%) translateY(6px) scale(.85);margin-bottom:6px;z-index:5;
+  background:var(--ink);color:var(--bg);font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:9px 9px 9px 2px;
+  white-space:nowrap;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.wspeech.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+/* chibi part idle animations (Pikachu bits) */
+.ear-l{animation:tw1 4s ease-in-out infinite}.ear-r{animation:tw2 4s ease-in-out infinite}
+@keyframes tw1{0%,90%,100%{transform:rotate(0)}94%{transform:rotate(-9deg)}}
+@keyframes tw2{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(9deg)}}
+.eyes{animation:blink 4.5s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.arm{animation:armswing 1.16s ease-in-out infinite}
+@keyframes armswing{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+.foot-l,.foot-r{transform-box:fill-box;transform-origin:center}
+.wpet.moving .foot-l{animation:stepA .5s ease-in-out infinite}
+.wpet.moving .foot-r{animation:stepB .5s ease-in-out infinite}
+@keyframes stepA{0%,100%{transform:translateY(0)}25%{transform:translateY(-6px)}}
+@keyframes stepB{0%,100%{transform:translateY(0)}75%{transform:translateY(-6px)}}
+@keyframes waddle{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-2px) rotate(3deg)}}
+@keyframes hopUp{0%,100%{transform:translateY(0)}42%{transform:translateY(-22px)}}
+@keyframes shadowpulse{0%,100%{transform:translateX(-50%) scale(1);opacity:.45}50%{transform:translateX(-50%) scale(.8);opacity:.3}}
+.sparkle{position:absolute;font-size:12px;pointer-events:none;z-index:6;animation:sparklepop .62s ease-out forwards}
+@keyframes sparklepop{0%{opacity:0;transform:translate(0,0) scale(.4)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx,0),var(--dy,-14px)) scale(1.1)}}
+
+/* ============ CARDS / GENERIC ============ */
+.card{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:24px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:.3s;position:relative;overflow:hidden}
+.card:hover{border-color:rgba(120,160,220,.4);transform:translateY(-5px);box-shadow:0 20px 44px rgba(0,0,0,.34)}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:.3s;pointer-events:none;
+  background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(34,211,238,.12),transparent 42%)}
+.card:hover::after{opacity:1}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:24px;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(168,85,247,.16));border:1px solid var(--line)}
+.card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.card p{color:var(--muted);font-size:14.5px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tag{font-size:12px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--bg2)}
+
+/* about */
+.about{display:grid;grid-template-columns:minmax(210px,250px) 1fr;gap:32px;align-items:start}
+.about p{color:var(--muted);margin-bottom:14px}
+.about b{color:var(--ink)}
+.about-main p{max-width:66ch}
+.about-side{display:flex;flex-direction:column;gap:16px}
+.about-side .stat{padding:12px 4px}
+.about-side .stat .n{font-size:24px}
+.about-side .stat .l{font-size:10px}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.stat{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:16px;text-align:center}
+.stat .n{font-size:28px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+.about-photo{margin:0;width:100%;border:7px solid #fff;border-radius:6px;overflow:hidden;
+  background:#fff;box-shadow:0 16px 40px rgba(0,0,0,.42);transform:rotate(-2.2deg);transition:.35s}
+.about-photo:hover{transform:rotate(0) scale(1.03)}
+.about-photo img{display:block;width:100%;height:auto}
+.about-photo.no-img img{display:none}
+.about-photo figcaption{font-family:ui-monospace,monospace;font-size:11.5px;color:#5a6b86;text-align:center;padding:7px 6px 3px}
+.about-photo.no-img{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;
+  border-color:var(--line);background:var(--panel);transform:rotate(0);color:var(--muted)}
+.about-photo.no-img::before{content:"📷";font-size:42px;opacity:.55;margin-bottom:8px}
+.about-photo.no-img figcaption{color:var(--muted)}
+
+/* news */
+.news{display:flex;flex-direction:column;gap:2px}
+.news .row{display:grid;grid-template-columns:120px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.news .row:hover .when{color:var(--pika)}
+.when{font-size:13px;color:var(--muted);font-weight:600;padding-top:1px;transition:.2s}
+.what{font-size:15px}
+.badge{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;margin-right:8px;vertical-align:1px}
+.b-new{background:var(--pika);color:#1a1300}
+.b-talk{background:rgba(34,211,238,.18);color:var(--cyan);border:1px solid rgba(34,211,238,.35)}
+.b-pub{background:rgba(168,85,247,.18);color:var(--violet);border:1px solid rgba(168,85,247,.35)}
+
+/* publications */
+.filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.chip{padding:7px 15px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  cursor:pointer;font-size:13.5px;font-weight:600;transition:.2s}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pub{padding:18px 4px;border-bottom:1px solid var(--line);transition:.25s}
+#publist .pub:last-child{border-bottom:none}
+.pub:hover .venue{color:var(--pika)}
+.pub:hover h4{color:var(--cyan);text-shadow:0 0 14px rgba(34,211,238,.4)}
+.pub .venue{font-size:12.5px;color:var(--cyan);font-weight:700;letter-spacing:.04em;transition:.2s}
+.pub h4{font-size:17px;font-weight:700;margin:5px 0;transition:.2s}
+.pub .auth{font-size:13.5px;color:var(--muted)}
+.pub .auth b{color:var(--ink)}
+.pub .links{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.pub .links a{font-size:12px;font-weight:700;padding:5px 11px;border-radius:8px;border:1px solid var(--line);color:var(--muted);transition:.2s}
+.pub .links a:hover{color:var(--pika);border-color:var(--pika);box-shadow:0 0 12px rgba(255,210,63,.35)}
+
+/* teaching */
+.teach-card{display:flex;gap:16px;align-items:flex-start}
+.teach-card .num{font-size:13px;font-weight:900;color:var(--pika);font-family:ui-monospace,monospace;padding-top:3px}
+.quote{border-left:3px solid var(--pika);padding:6px 0 6px 18px;color:var(--muted);font-style:italic;margin-top:16px}
+
+/* beyond */
+.play{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:16px}
+.sport{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:22px 16px;text-align:center;transition:.3s;cursor:default}
+.sport:hover{transform:translateY(-6px) rotate(-2deg);border-color:var(--pika);box-shadow:0 16px 36px rgba(0,0,0,.3)}
+.sport .em{font-size:40px;display:inline-block;transition:.3s}
+.sport:hover .em{transform:scale(1.25) rotate(14deg)}
+.sport .nm{font-weight:700;margin-top:8px}
+.sport .lv{font-size:12px;color:var(--muted);margin-top:2px}
+.funfacts{display:flex;flex-direction:column;gap:10px}
+.ff{display:flex;gap:12px;align-items:center;font-size:14.5px;color:var(--muted)}
+.ff .k{font-size:20px}
+
+/* contact */
+.contact-wrap{text-align:center;border:1px solid var(--line);background:var(--panel);border-radius:26px;padding:52px 26px;position:relative;overflow:hidden}
+.contact-wrap h2{font-size:clamp(26px,4.6vw,42px);font-weight:900;margin-bottom:10px}
+.contact-wrap p{color:var(--muted);max-width:44ch;margin:0 auto 24px}
+.mailbtn{font-size:16px;padding:14px 28px}
+.contact-list{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:26px}
+.contact-list a{display:inline-flex;align-items:center;gap:10px;font-family:ui-monospace,monospace;font-size:13.5px;
+  color:var(--muted);border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:9px 15px;
+  transition:.2s;max-width:100%;word-break:break-all;text-align:left}
+.contact-list a:hover{color:var(--ink);border-color:var(--cyan);box-shadow:var(--glow)}
+.contact-list svg{width:16px;height:16px;flex:0 0 auto;color:var(--cyan)}
+
+footer{text-align:center;padding:40px 22px 60px;color:var(--muted);font-size:13px}
+footer .hint{font-size:12px;opacity:.7;margin-top:8px}
+kbd{font-family:ui-monospace,monospace;font-size:11px;background:var(--bg2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--ink)}
+
+/* toast + easter egg */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);z-index:80;
+  background:var(--ink);color:var(--bg);font-weight:800;padding:13px 22px;border-radius:14px;opacity:0;
+  transition:.35s;box-shadow:0 12px 34px rgba(0,0,0,.4);pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.bolt{position:fixed;top:-40px;font-size:26px;z-index:70;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(108vh) rotate(220deg);opacity:.2}}
+#backtop{position:fixed;right:22px;bottom:24px;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);cursor:pointer;font-size:18px;z-index:55;opacity:0;transform:translateY(14px);
+  transition:.3s;backdrop-filter:blur(10px)}
+#backtop.show{opacity:1;transform:none}
+#backtop:hover{background:var(--pika);color:#1a1300;border-color:var(--pika)}
+
+/* ============ EXTRA ANIMATIONS ============ */
+.enter{opacity:0;transform:translateY(22px);animation:enterUp .85s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes enterUp{to{opacity:1;transform:none}}
+.d1{animation-delay:.05s}.d2{animation-delay:.18s}.d3{animation-delay:.34s}.d4{animation-delay:.5s}.d5{animation-delay:.64s}.d6{animation-delay:.78s}
+.shine{position:relative;overflow:hidden;padding-bottom:.06em}
+.shine::after{content:"";position:absolute;top:-20%;left:-60%;width:34%;height:150%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-16deg);animation:sweep 6s ease-in-out infinite}
+@keyframes sweep{0%,58%{left:-60%}82%,100%{left:135%}}
+.scrolldown{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;
+  align-items:center;gap:7px;color:var(--muted);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;
+  opacity:0;animation:fadeIn 1s 1.5s forwards;text-decoration:none}
+.scrolldown .mouse{width:22px;height:34px;border:2px solid var(--muted);border-radius:12px;position:relative}
+.scrolldown .mouse::before{content:"";position:absolute;top:6px;left:50%;width:3px;height:6px;background:var(--pika);
+  border-radius:2px;transform:translateX(-50%);animation:wheel 1.5s infinite}
+.scrolldown:hover{color:var(--pika)}
+.scrolldown:hover .mouse{border-color:var(--pika)}
+@keyframes wheel{0%{opacity:1;top:6px}70%{opacity:0;top:17px}100%{opacity:0;top:17px}}
+@keyframes fadeIn{to{opacity:.8}}
+.grid3>.reveal:nth-child(2){transition-delay:.09s}
+.grid3>.reveal:nth-child(3){transition-delay:.18s}
+.grid3>.reveal:nth-child(4){transition-delay:.27s}
+.grid3>.reveal:nth-child(5){transition-delay:.36s}
+.grid3>.reveal:nth-child(6){transition-delay:.45s}
+#publist>.reveal:nth-child(2){transition-delay:.1s}
+#publist>.reveal:nth-child(3){transition-delay:.2s}
+#publist>.reveal:nth-child(4){transition-delay:.3s}
+.stat.pop{animation:statpop .6s ease}
+@keyframes statpop{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+.card:hover .ic{animation:wiggle .55s ease}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-13deg)}75%{transform:rotate(13deg)}}
+.tag{transition:.2s;cursor:default}
+.tag:hover{color:var(--ink);border-color:var(--cyan);box-shadow:0 0 10px rgba(34,211,238,.3);transform:translateY(-2px)}
+.ticker{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel);padding:13px 0;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ticker .track{display:flex;gap:40px;width:max-content;animation:scrollx 30s linear infinite}
+.ticker:hover .track{animation-play-state:paused}
+.ticker span{font-family:ui-monospace,monospace;font-size:14px;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:9px}
+.ticker span b{color:var(--pika);font-weight:700}
+@keyframes scrollx{to{transform:translateX(-50%)}}
+.ecg-wrap{max-width:var(--maxw);margin:0 auto;padding:6px 22px 0}
+.ecg{width:100%;height:54px;display:block;opacity:.85}
+.ecg path{fill:none;stroke:var(--cyan);stroke-width:2.5;filter:drop-shadow(0 0 6px rgba(34,211,238,.85));
+  stroke-dasharray:1600;stroke-dashoffset:1600;animation:trace 4s linear infinite}
+@keyframes trace{to{stroke-dashoffset:-1600}}
+.firefly{position:fixed;bottom:-12px;width:4px;height:4px;border-radius:50%;z-index:-1;pointer-events:none;animation:rise linear infinite}
+@keyframes rise{0%{opacity:0;transform:translateY(0) translateX(0)}12%{opacity:.85}88%{opacity:.5}100%{opacity:0;transform:translateY(-103vh) translateX(34px)}}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:860px){
+  .hero{grid-template-columns:1fr;text-align:center;gap:30px;padding-top:110px;min-height:auto}
+  .hero .cta,.hero .socials,.term-chip{justify-content:center}
+  .hero .sub{margin-left:auto;margin-right:auto}
+  .stage{order:-1}
+  .about{grid-template-columns:1fr}
+  .about-photo{max-width:230px;margin:0 auto 6px}
+  .about-main p{max-width:none}
+  .grid3,.grid2,.play{grid-template-columns:1fr}
+  .news .row{grid-template-columns:1fr}
+  .when{padding-top:0}
+  .scrolldown{display:none}
+  .ticker span{font-size:13px}
+  #playground{width:94vw;height:150px}
+  .wpet{width:58px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.15s!important}
+}
+</style>
+</head>
+<body>
+
+<div id="bgfx"></div>
+<div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
+<div id="grid"></div>
+<canvas id="stars"></canvas>
+<div id="cursor-glow"></div>
+<div id="progress"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="navlink" href="#home">Home</a>
+  <a class="navlink" href="#about">About</a>
+  <a class="navlink" href="#news">News</a>
+  <a class="navlink" href="#research">Research</a>
+  <a class="navlink" href="#pubs">Papers</a>
+  <a class="navlink" href="#beyond">Beyond</a>
+  <a class="navlink" href="#contact">Contact</a>
+  <button class="nav-ctrl" id="themeBtn" title="Toggle theme">🌙</button>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div>
+    <span class="term-chip mono enter d1"><span class="dot"></span> ~ $ whoami · postdoc @ UNC · open to collaborate</span>
+    <h1 class="enter d2 shine"><span class="glitch">Yukang</span> <span class="gr">Jiang</span></h1>
+    <div class="role mono enter d3">&gt; <span class="tw" id="tw"></span><span class="caret"></span></div>
+    <p class="sub enter d4">Postdoctoral researcher in <b style="color:var(--ink)">biostatistics &amp; medical AI</b> at UNC-Chapel Hill, building AI models for electronic health records and large-scale health data.</p>
+    <div class="cta enter d5">
+      <a class="btn btn-primary" href="#pubs">⚡ See my work</a>
+      <a class="btn btn-ghost" href="#contact">📮 Get in touch</a>
+    </div>
+    <div class="socials enter d6">
+      <a href="mailto:Yukang_Jiang@med.unc.edu" title="Email" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></a>
+      <a href="https://scholar.google.com/citations?user=WXj0_dEAAAAJ&amp;hl=en" target="_blank" rel="noopener" title="Google Scholar (311 citations)" aria-label="Scholar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 8l11 6 9-4.9V17h2V8L12 2zM5 13.2v3.6c0 1.7 3.1 3.2 7 3.2s7-1.5 7-3.2v-3.6l-7 3.8-7-3.8z"/></svg></a>
+      <a href="https://github.com/kannyjyk" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/></svg></a>
+    </div>
+  </div>
+
+  <!-- HERO EMBLEM: holographic Poké Ball core (click to release the gang!) -->
+  <div class="stage enter d4">
+    <div class="court" id="court">
+      <div class="ring r2"></div><div class="ring"></div><div class="ring r3"></div>
+      <div class="halo"></div>
+      <div class="orb o1">🎾</div><div class="orb o2">🏸</div><div class="orb o3">🏓</div>
+      <div class="pokeball" id="pokeball" title="Click to send out the Pokémon!"><div class="pb-body"><span class="pb-btn"></span><span class="pb-flash"></span></div></div>
+    </div>
+  </div>
+
+  <a href="#about" class="scrolldown" aria-label="Scroll down"><div class="mouse"></div><span>Scroll</span></a>
+</section>
+
+<!-- TECH TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="track" id="ticktrack">
+    <span>🏥 <b>EHR foundation models</b></span><span>🧬 Biostatistics</span><span>⚙️ UK Biobank &amp; All of Us</span><span>📈 High-dimensional inference</span><span>👁️ Medical imaging AI</span><span>🛠️ R packages</span><span>🎾 Tennis</span><span>🏸 Badminton</span><span>🏓 Ping-pong</span><span>⚡ <b>Pikachu-approved</b></span>
+    <span>🏥 <b>EHR foundation models</b></span><span>🧬 Biostatistics</span><span>⚙️ UK Biobank &amp; All of Us</span><span>📈 High-dimensional inference</span><span>👁️ Medical imaging AI</span><span>🛠️ R packages</span><span>🎾 Tennis</span><span>🏸 Badminton</span><span>🏓 Ping-pong</span><span>⚡ <b>Pikachu-approved</b></span>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="reveal"><div class="eyebrow">01 · About</div>
+  <h2 class="title">Nice to meet you 👋</h2></div>
+  <div class="about reveal">
+    <div class="about-side">
+      <figure class="about-photo no-img">
+        <img src="images/yukang.jpg" alt="Yukang Jiang by the water with his dogs" loading="lazy"
+             onload="this.parentElement.classList.remove('no-img')"
+             onerror="this.parentElement.classList.add('no-img');this.style.display='none'">
+        <figcaption>Me &amp; the pack 🐕</figcaption>
+      </figure>
+      <div class="stat-row">
+        <div class="stat"><div class="n" id="cite-count">311</div><div class="l">Citations</div></div>
+        <div class="stat"><div class="n">17</div><div class="l">Papers</div></div>
+        <div class="stat"><div class="n">∞</div><div class="l">Curiosity</div></div>
+      </div>
+    </div>
+    <div class="about-main">
+      <p>I'm a postdoctoral researcher in the <b>Department of Radiology at UNC-Chapel Hill</b> (with Profs. Hongtu Zhu &amp; Tengfei Li), after a Ph.D. in Statistics at <b>Sun Yat-Sen University</b>. I work where <b>biostatistics</b>, <b>machine learning</b>, and <b>large-scale health data</b> meet.</p>
+      <p>Right now I'm building <b>AI models for electronic health records</b> that bring together clinical events, genetics, imaging and text to get a clear picture of each patient: their risk, when a disease starts, and how conditions add up. Earlier work covers statistics for high-dimensional data (<i>JASA</i>, <i>Statistica Sinica</i>), medical-imaging AI, and COVID-19 modeling.</p>
+      <p>Off the clock you'll find me on a court with a racket in hand, or keeping an eye on the Pokémon wandering along the bottom of this page. Good science, like a good rally, is about patience, timing, and the occasional bold winner.</p>
+      <div class="card" style="margin-top:18px">
+        <h3>🎯 Currently</h3>
+        <p>Multimodal EHR foundation models, medication-aware longitudinal analysis, and reproducible lupus / autoimmune pipelines across UK Biobank, <i>All of Us</i> &amp; OMOP clinical data.</p>
+        <div class="tags">
+          <span class="tag">Python</span><span class="tag">R</span><span class="tag">PyTorch</span>
+          <span class="tag">SQL</span><span class="tag">transformers</span><span class="tag">biostatistics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section id="news">
+  <div class="reveal"><div class="eyebrow">02 · Latest</div>
+  <h2 class="title">News &amp; updates</h2></div>
+  <div class="news card reveal">
+    <div class="row"><div class="when">May 2026</div><div class="what"><span class="badge b-talk">TALK</span>Invited talk at <b>NESS 2026</b> (UConn): foundation AI models for clinical decision support.</div></div>
+    <div class="row"><div class="when">Apr 2026</div><div class="what"><span class="badge b-talk">TALK</span>Spoke at the <b>Duke Industry Statistics Symposium</b> (DISS 2026): AI for real-world evidence.</div></div>
+    <div class="row"><div class="when">2025</div><div class="what"><span class="badge b-pub">PAPER</span><b>UKB-MDRMF</b>, my multi-disease risk &amp; multimorbidity framework, published in <i>Nature Communications</i>.</div></div>
+    <div class="row"><div class="when">Oct 2024</div><div class="what"><span class="badge b-new">NEW</span>Joined <b>UNC-Chapel Hill</b> (Radiology) as a postdoctoral researcher.</div></div>
+    <div class="row"><div class="when">Jun 2024</div><div class="what">🎓 Completed my Ph.D. in Statistics at Sun Yat-Sen University.</div></div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research">
+  <div class="reveal"><div class="eyebrow">03 · Research</div>
+  <h2 class="title">What I work on</h2></div>
+  <div class="grid3">
+    <div class="card tilt reveal">
+      <h3>AI for Health Records</h3>
+      <p>Deep-learning models that read long health records and bring clinical events, genetics, imaging &amp; text into one clear picture of the patient.</p>
+      <div class="tags"><span class="tag">transformers</span><span class="tag">EHR</span><span class="tag">foundation models</span></div>
+    </div>
+    <div class="card tilt reveal">
+      <h3>Large-scale Biomedical Data</h3>
+      <p>Predicting many diseases at once, at biobank scale: UKB-MDRMF (<i>Nature Communications</i>) on UK Biobank &amp; <i>All of Us</i>.</p>
+      <div class="tags"><span class="tag">UK Biobank</span><span class="tag">All of Us</span><span class="tag">multimorbidity</span></div>
+    </div>
+    <div class="card tilt reveal">
+      <h3>High-dimensional Statistics</h3>
+      <p>New statistical tests (built on random integration) that stay strong even when the signal is weak and spread thin (<i>JASA</i>, <i>Statistica Sinica</i>).</p>
+      <div class="tags"><span class="tag">hypothesis testing</span><span class="tag">high-dim</span><span class="tag">JASA</span></div>
+    </div>
+    <div class="card tilt reveal">
+      <h3>Medical AI &amp; Imaging</h3>
+      <p>Award-winning eye-disease AI: reading retinal photos and checking their quality with deep learning.</p>
+      <div class="tags"><span class="tag">deep learning</span><span class="tag">imaging</span><span class="tag">ophthalmology</span></div>
+    </div>
+    <div class="card tilt reveal">
+      <h3>Models You Can Explain</h3>
+      <p>Health &amp; epidemic models you can actually explain (COVINet), because doctors won't trust a model they can't question.</p>
+      <div class="tags"><span class="tag">interpretability</span><span class="tag">deep learning</span></div>
+    </div>
+    <div class="card tilt reveal">
+      <h3>Statistical Software</h3>
+      <p>Free, open-source R tools for statistics and picking the variables that matter, so the next researcher starts a few steps ahead.</p>
+      <div class="tags"><span class="tag">R packages</span><span class="tag">open source</span><span class="tag">reproducibility</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="pubs">
+  <div class="reveal"><div class="eyebrow">04 · Publications</div>
+  <h2 class="title">Selected papers</h2></div>
+  <div class="filters reveal">
+    <button class="chip on" data-f="all">All</button>
+    <button class="chip" data-f="biostat">Biostatistics</button>
+    <button class="chip" data-f="ehr">EHR &amp; AI</button>
+    <button class="chip" data-f="imaging">Medical Imaging</button>
+  </div>
+  <div id="publist">
+    <div class="pub reveal" data-cat="ehr biostat">
+      <div>
+        <div class="venue">Nature Communications · 2025</div>
+        <h4>UKB-MDRMF: a multi-disease risk and multimorbidity framework based on UK Biobank data</h4>
+        <div class="auth"><b>Y. Jiang</b>, B. Zhao, X. Wang, … H. Zhu</div>
+        <div class="links"><a href="https://www.nature.com/articles/s41467-025-58724-3" target="_blank" rel="noopener">PDF</a><a href="https://github.com/kannyjyk/UKB-MDRMF" target="_blank" rel="noopener">Code</a><a href="https://doi.org/10.1038/s41467-025-58724-3" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+    <div class="pub reveal" data-cat="biostat">
+      <div>
+        <div class="venue">J. American Statistical Association · 2024</div>
+        <h4>Nonparametric two-sample tests of high-dimensional mean vectors via random integration</h4>
+        <div class="auth">Y. Jiang, X. Wang, C. Wen, <b>Y. Jiang</b>, et al.</div>
+        <div class="links"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11028772/" target="_blank" rel="noopener">PDF</a><a href="https://doi.org/10.1080/01621459.2022.2141636" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+    <div class="pub reveal" data-cat="ehr biostat">
+      <div>
+        <div class="venue">J. Applied Statistics · 2024</div>
+        <h4>COVINet: an interpretable deep-learning model for county-wise COVID-19 trajectories in the US</h4>
+        <div class="auth"><b>Y. Jiang</b>, T. Tian, W. Zhou, et al.</div>
+        <div class="links"><a href="https://www.medrxiv.org/content/10.1101/2020.05.26.20113787v3" target="_blank" rel="noopener">PDF</a><a href="https://doi.org/10.1080/02664763.2024.2412284" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+    <div class="pub reveal" data-cat="imaging">
+      <div>
+        <div class="venue">Translational Vision Science &amp; Technology · 2024</div>
+        <h4>Retinal fundus image quality assessment with Swin-Transformers across color spaces</h4>
+        <div class="auth">C. Huang, <b>Y. Jiang</b>, X. Yang, et al. <span style="color:var(--pika)">· co-first</span></div>
+        <div class="links"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10996994/" target="_blank" rel="noopener">PDF</a><a href="https://doi.org/10.1167/tvst.13.4.8" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+    <div class="pub reveal" data-cat="biostat">
+      <div>
+        <div class="venue">J. American Statistical Association · 2021</div>
+        <h4>The effects of stringent and mild interventions for the coronavirus pandemic</h4>
+        <div class="auth">T. Tian, J. Tan, W. Luo, <b>Y. Jiang</b>, et al. <span style="color:var(--pika)">· co-first</span></div>
+        <div class="links"><a href="https://www.medrxiv.org/content/10.1101/2020.05.16.20103879v1" target="_blank" rel="noopener">PDF</a><a href="https://doi.org/10.1080/01621459.2021.1897015" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+    <div class="pub reveal" data-cat="biostat">
+      <div>
+        <div class="venue">Statistica Sinica · 2022</div>
+        <h4>Testing equality of high-dimensional covariance matrices via random integration</h4>
+        <div class="auth">Y. Jiang, C. Wen, <b>Y. Jiang</b>, et al.</div>
+        <div class="links"><a href="https://doi.org/10.5705/ss.202020.0486" target="_blank" rel="noopener">PDF</a><a href="https://doi.org/10.5705/ss.202020.0486" target="_blank" rel="noopener">Cite</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEYOND -->
+<section id="beyond">
+  <div class="reveal"><div class="eyebrow">05 · Beyond research</div>
+  <h2 class="title">The human behind the p-values</h2></div>
+  <div class="play reveal">
+    <div class="sport"><span class="em">🎾</span><div class="nm">Tennis</div><div class="lv">Federer fan · plays a YONEX EZONE 98</div></div>
+    <div class="sport"><span class="em">🏸</span><div class="nm">Badminton</div><div class="lv">Casual, still learning the ropes</div></div>
+    <div class="sport"><span class="em">🏓</span><div class="nm">Table Tennis</div><div class="lv">Fan Zhendong fan · penhold backhand · his ALC + Z03 blade</div></div>
+    <div class="sport"><span class="em">🕺</span><div class="nm">Dance</div><div class="lv">Sun Yat-Sen troupe alum · folk styles</div></div>
+    <div class="sport"><span class="em">📖</span><div class="nm">Web novels</div><div class="lv">My off-hours guilty pleasure</div></div>
+  </div>
+</section>
+
+<!-- ECG HEARTBEAT DIVIDER -->
+<div class="ecg-wrap" aria-hidden="true">
+  <svg class="ecg" viewBox="0 0 1200 54" preserveAspectRatio="none">
+    <path d="M0 27 H150 l8 -4 l6 9 l8 -33 l8 47 l8 -22 l6 3 H450 l8 -4 l6 9 l8 -33 l8 47 l8 -22 l6 3 H750 l8 -4 l6 9 l8 -33 l8 47 l8 -22 l6 3 H1050 l8 -4 l6 9 l8 -33 l8 47 l8 -22 l6 3 H1200"/>
+  </svg>
+</div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap reveal">
+    <div class="orb" style="position:absolute;top:16px;left:24px;animation:orbit 6s infinite">🎾</div>
+    <div class="orb" style="position:absolute;bottom:16px;right:30px;animation:orbit 7s infinite;animation-delay:-2s">⚡</div>
+    <div class="eyebrow" style="justify-content:center">06 · Contact</div>
+    <h2>Let's build something 🚀</h2>
+    <p>Future students, collaborators, and good ping-pong opponents welcome. I usually reply within a rally or two.</p>
+    <a class="btn btn-primary mailbtn" href="mailto:Yukang_Jiang@med.unc.edu">📮 Say hello</a>
+    <div class="contact-list">
+      <a href="mailto:Yukang_Jiang@med.unc.edu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Yukang_Jiang@med.unc.edu</a>
+      <a href="https://scholar.google.com/citations?user=WXj0_dEAAAAJ&amp;hl=en" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 8l11 6 9-4.9V17h2V8L12 2zM5 13.2v3.6c0 1.7 3.1 3.2 7 3.2s7-1.5 7-3.2v-3.6l-7 3.8-7-3.8z"/></svg>scholar.google.com/citations?user=WXj0_dEAAAAJ</a>
+      <a href="https://github.com/kannyjyk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5z"/></svg>github.com/kannyjyk</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div>⚡ Designed &amp; built with caffeine and curiosity · © <span id="yr"></span> Yukang Jiang</div>
+  <div class="hint">Made with a bit of fun. Catch the Poké Ball, and try the Konami code. 🥚</div>
+</footer>
+
+<button id="backtop" title="Back to top">↑</button>
+<div id="toast"></div>
+
+<!-- CORNER PLAYGROUND: Pikachu, Mario & Link wandering around -->
+<div id="playground" aria-hidden="true">
+  <div class="wpet" id="w-pika" data-say="Pika!|Pika-pika! ⚡|Chuuu~ 🎾">
+    <div class="wspeech"></div><div class="wpet-shadow"></div>
+    <div class="wpet-hop"><div class="wpet-in">
+      <svg viewBox="106 44 490 578">
+        <defs>
+          <linearGradient id="pika-yellow" x1="0" y1="0" x2="0.2" y2="1">
+            <stop offset="0" stop-color="#f8e66e"/><stop offset="0.58" stop-color="#f2d75c"/><stop offset="1" stop-color="#e8c748"/>
+          </linearGradient>
+          <linearGradient id="pika-tail" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f8e775"/><stop offset="0.7" stop-color="#efd55e"/><stop offset="1" stop-color="#d7bb57"/>
+          </linearGradient>
+          <clipPath id="tail-clip"><path d="M410 424 L448 423 L460 454 L482 447 L495 426 L514 420 L508 405 L529 389 L568 359 Q585 346 586 326 L588 244 Q548 245 514 266 L470 301 Q447 318 434 342 L420 385 Z"/></clipPath>
+        </defs>
+        <g stroke="#242c31" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+          <path fill="url(#pika-tail)" d="M410 424 L448 423 L460 454 L482 447 L495 426 L514 420 L508 405 L529 389 L568 359 Q585 346 586 326 L588 244 Q548 245 514 266 L470 301 Q447 318 434 342 L420 385 Z"/>
+          <path clip-path="url(#tail-clip)" fill="#c7aa50" stroke="none" opacity="0.55" d="M466 354 C500 344 548 331 592 324 L592 411 L540 443 L507 438 L487 457 L456 458 Z"/>
+          <path fill="url(#pika-yellow)" d="M174 218 C153 194 143 164 143 127 C143 91 145 59 160 54 C187 46 228 69 253 103 C272 128 281 162 284 201 Z"/>
+          <path fill="#242c31" stroke="none" d="M145 116 C142 86 146 60 160 54 C183 47 215 62 240 88 L174 147 C161 140 151 129 145 116 Z"/>
+          <path fill="url(#pika-yellow)" d="M349 201 C367 154 392 105 421 61 C433 44 445 48 452 66 C468 109 456 160 443 213 Z"/>
+          <path fill="#242c31" stroke="none" d="M388 112 C400 89 410 72 421 61 C433 44 445 48 452 66 C461 90 461 116 457 139 Z"/>
+          <path fill="url(#pika-yellow)" d="M284 184 C236 183 199 201 174 232 C151 260 140 299 141 339 C126 351 118 370 120 390 C122 421 151 440 193 448 L183 535 C180 574 201 600 236 604 C260 607 281 599 302 595 C322 600 346 608 370 606 C410 603 430 583 427 546 L414 449 C455 447 481 423 487 389 C492 364 486 346 474 334 C473 298 464 268 448 242 C423 202 385 184 339 184 Z"/>
+        </g>
+        <g class="eyes" fill="#20292d" style="transform-box:fill-box;transform-origin:center">
+          <ellipse cx="216" cy="332" rx="21" ry="18" transform="rotate(8 216 332)"/>
+          <ellipse cx="394" cy="329" rx="22" ry="19" transform="rotate(7 394 329)"/>
+        </g>
+        <g stroke="#20292d" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <path d="M272 346 C281 360 293 361 304 349 C313 361 324 362 334 348 C344 358 353 358 361 346"/>
+          <path d="M232 502 C222 515 225 538 243 546 C255 552 263 544 263 530"/>
+          <path d="M371 491 C357 507 355 537 368 545 C380 553 392 545 396 533"/>
+        </g>
+        <g>
+          <circle cx="188" cy="382" r="34" fill="#dc3e43"/><circle cx="420" cy="377" r="33" fill="#dc3e43"/>
+          <circle cx="190" cy="368" r="10" fill="#dcecf4" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="420" cy="363" r="10" fill="#dcecf4" stroke="#ffffff" stroke-width="3"/>
+        </g>
+      </svg>
+    </div></div>
+  </div>
+
+  <div class="wpet" id="w-bulba" data-say="Bulba!|Saur~ 🌱|Bulba-bulba!">
+    <div class="wspeech"></div><div class="wpet-shadow"></div>
+    <div class="wpet-hop"><div class="wpet-in">
+      <svg viewBox="100 114 374 340">
+        <defs>
+          <linearGradient id="bulb-main" x1="0.15" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#78b878"/><stop offset="1" stop-color="#4f8c59"/></linearGradient>
+          <linearGradient id="bulb-light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#80c486"/><stop offset="1" stop-color="#66a96d"/></linearGradient>
+          <linearGradient id="saur-mint" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#b8e1d4"/><stop offset="0.55" stop-color="#a6d8ca"/><stop offset="1" stop-color="#8fc8bb"/></linearGradient>
+        </defs>
+        <g stroke="#253034" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path fill="url(#bulb-main)" d="M211 181 C248 151 314 124 369 124 C408 124 438 153 451 195 C464 236 460 286 443 320 C432 343 410 358 387 363 L344 316 L326 213 Z"/>
+          <path fill="url(#bulb-light)" d="M211 181 C253 146 321 121 369 124 C388 125 399 137 400 157 L398 202 C356 183 307 174 260 182 Z"/>
+          <path fill="none" d="M234 172 C269 157 301 149 327 145"/>
+          <path fill="none" d="M304 181 C328 162 350 151 371 142"/>
+          <path fill="url(#bulb-main)" d="M399 164 C429 181 448 210 452 247 C456 280 447 312 424 333 L389 315 C407 281 409 241 398 203 Z"/>
+          <path fill="none" d="M423 223 C430 258 427 291 412 316"/>
+          <path fill="#5f9b65" d="M387 307 C413 326 428 353 421 383 C417 397 405 399 395 388 C381 373 377 344 387 307 Z"/>
+          <path fill="url(#saur-mint)" d="M143 161 C129 151 117 158 111 177 C101 214 96 258 102 300 C108 337 139 360 178 368 L170 394 C166 414 176 432 194 436 C205 438 214 430 222 418 L318 419 L333 435 C344 447 357 439 366 423 C393 425 420 434 435 421 C448 409 443 389 436 372 C411 369 389 360 373 346 C384 328 390 307 389 282 L371 260 L401 207 C407 196 403 181 391 177 C383 174 374 174 363 177 C325 166 284 165 250 176 C219 184 190 184 166 170 Z"/>
+          <ellipse cx="247" cy="203" rx="36" ry="27" transform="rotate(12 247 203)" fill="#4f8e68"/>
+          <ellipse cx="160" cy="388" rx="22" ry="18" transform="rotate(11 160 388)" fill="#427a61"/>
+          <ellipse cx="307" cy="397" rx="22" ry="13" transform="rotate(-8 307 397)" fill="#427a61"/>
+          <ellipse cx="414" cy="398" rx="14" ry="16" transform="rotate(-15 414 398)" fill="#497661"/>
+        </g>
+        <circle cx="190" cy="238" r="7" fill="#eef9f5" stroke="#263034" stroke-width="5"/>
+        <g class="eyes" style="transform-box:fill-box;transform-origin:center">
+          <circle cx="148" cy="286" r="15" fill="#1f292d"/>
+          <circle cx="315" cy="294" r="15" fill="#1f292d"/>
+        </g>
+        <circle cx="137" cy="319" r="14" fill="#e69bb3" opacity="0.78"/>
+        <circle cx="334" cy="329" r="15" fill="#e69bb3" opacity="0.78"/>
+        <path d="M195 303 C207 311 226 312 242 304 C238 323 208 330 199 310 Z" fill="#f0f7f4" stroke="#202a2e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M205 317 C215 321 226 320 233 313" fill="none" stroke="#d07f8d" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+    </div></div>
+  </div>
+
+  <div class="wpet" id="w-char" data-say="Char!|Char-char! 🔥|Charmander!">
+    <div class="wspeech"></div><div class="wpet-shadow"></div>
+    <div class="wpet-hop"><div class="wpet-in">
+      <svg viewBox="210 104 480 528">
+        <defs>
+          <linearGradient id="charmander-orange" x1="0.1" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#ffad59"/><stop offset="0.58" stop-color="#f58a3f"/><stop offset="1" stop-color="#df6b32"/></linearGradient>
+          <linearGradient id="charmander-belly" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="#fff0bd"/><stop offset="1" stop-color="#efc977"/></linearGradient>
+          <linearGradient id="flame-outer" x1="0.4" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#ff6a35"/><stop offset="1" stop-color="#e8492f"/></linearGradient>
+          <linearGradient id="flame-inner" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#fff36b"/><stop offset="1" stop-color="#ffc43f"/></linearGradient>
+        </defs>
+        <g stroke="#282d31" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+          <path fill="url(#flame-outer)" d="M565 388 C548 368 552 342 570 323 C590 301 588 281 585 260 C612 273 630 299 628 326 C644 313 653 297 652 280 C675 304 678 339 661 368 C643 398 603 414 576 402 Z"/>
+          <path fill="url(#flame-inner)" stroke-width="9" d="M585 382 C575 365 580 347 595 333 C608 321 612 309 612 298 C629 316 632 336 624 351 C636 345 645 336 649 326 C651 350 635 375 613 384 Z"/>
+          <path fill="url(#charmander-orange)" d="M420 505 C468 497 493 467 516 428 C536 394 555 378 579 378 C597 378 606 395 598 409 C585 431 559 452 548 486 C535 527 508 560 463 575 L415 548 Z"/>
+          <path fill="url(#charmander-orange)" d="M274 377 C248 411 244 488 261 548 C274 594 417 600 441 552 C461 510 457 416 429 381 Z"/>
+          <path fill="url(#charmander-orange)" d="M276 410 C244 405 220 428 221 457 C222 479 240 494 264 492 L291 460 Z"/>
+          <path fill="url(#charmander-orange)" d="M426 410 C459 405 483 427 482 456 C481 478 463 493 439 491 L412 460 Z"/>
+          <path fill="url(#charmander-orange)" d="M283 530 C251 538 230 568 244 595 C258 621 299 612 324 582 Z"/>
+          <path fill="url(#charmander-orange)" d="M418 530 C449 537 472 566 459 594 C446 620 405 613 379 582 Z"/>
+          <path fill="url(#charmander-belly)" d="M309 414 C292 453 294 520 313 556 C332 584 379 584 398 556 C417 520 417 454 397 414 Z"/>
+          <path fill="url(#charmander-orange)" d="M289 137 C334 113 399 115 438 139 C470 158 485 185 483 217 C482 230 486 239 499 247 C521 260 533 282 530 306 C527 332 507 348 481 356 C467 361 457 370 446 380 C420 402 352 405 306 389 C262 374 234 346 232 315 C230 290 241 270 258 256 C253 219 260 173 280 146 Z"/>
+        </g>
+        <g class="eyes" stroke="#21292d" stroke-width="8" style="transform-box:fill-box;transform-origin:center">
+          <ellipse cx="306" cy="251" rx="29" ry="42" transform="rotate(4 306 251)" fill="#3d9fa8"/>
+          <ellipse cx="432" cy="248" rx="29" ry="42" transform="rotate(4 432 248)" fill="#3d9fa8"/>
+          <path d="M296 214 C282 226 282 254 289 273 C295 288 310 290 319 276 C328 260 328 232 318 217 C312 208 303 208 296 214 Z" fill="#21292d" stroke="none"/>
+          <path d="M422 211 C408 223 408 251 415 270 C421 285 436 287 445 273 C454 257 454 229 444 214 C438 205 429 205 422 211 Z" fill="#21292d" stroke="none"/>
+          <ellipse cx="303" cy="221" rx="8" ry="13" fill="#fff8e9" stroke="none"/>
+          <ellipse cx="429" cy="218" rx="8" ry="13" fill="#fff8e9" stroke="none"/>
+        </g>
+        <circle cx="276" cy="332" r="22" fill="#eb7f85" opacity="0.76"/>
+        <circle cx="476" cy="326" r="22" fill="#eb7f85" opacity="0.76"/>
+        <path d="M307 318 C337 333 392 334 425 317 C422 348 396 366 367 366 C337 366 315 348 307 318 Z" fill="#642e2b" stroke="#21292d" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M323 323 L333 339 L343 327" fill="#fff9ed" stroke="none"/>
+        <path d="M342 355 C358 346 382 346 399 355 C389 363 378 366 367 366 C358 366 349 362 342 355 Z" fill="#e98991" stroke="none"/>
+        <path d="M355 299 L358 303 M382 298 L385 302" fill="none" stroke="#21292d" stroke-width="6" stroke-linecap="round"/>
+        <path d="M294 585 C302 593 312 596 322 595 M402 595 C414 596 424 592 431 584" fill="none" stroke="#282d31" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+    </div></div>
+  </div>
+
+  <div class="wpet" id="w-squir" data-say="Squirtle!|Squirt~ 💧|Squirtle-squirtle!">
+    <div class="wspeech"></div><div class="wpet-shadow"></div>
+    <div class="wpet-hop"><div class="wpet-in">
+      <svg viewBox="168 112 442 522">
+        <defs>
+          <linearGradient id="squirtle-blue" x1="0.1" y1="0" x2="0.75" y2="1"><stop offset="0" stop-color="#a8e2e2"/><stop offset="0.58" stop-color="#83ced4"/><stop offset="1" stop-color="#65b8c5"/></linearGradient>
+          <linearGradient id="shell-rim" x1="0" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#f0cf8d"/><stop offset="1" stop-color="#d6a85f"/></linearGradient>
+          <linearGradient id="shell-brown" x1="0.1" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#bd8058"/><stop offset="1" stop-color="#92583f"/></linearGradient>
+          <linearGradient id="squirtle-belly" x1="0" y1="0" x2="0.2" y2="1"><stop offset="0" stop-color="#fff1bf"/><stop offset="1" stop-color="#efd18b"/></linearGradient>
+        </defs>
+        <g stroke="#242d32" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+          <path fill="url(#squirtle-blue)" d="M458 451 C503 421 552 427 578 459 C598 484 586 517 558 522 C537 526 521 511 526 494 C530 480 546 473 559 481 C544 463 520 465 503 483 C487 500 479 526 475 553 L425 525 Z"/>
+          <path fill="url(#shell-rim)" d="M229 330 C274 286 408 283 472 328 C530 370 532 486 478 553 C435 606 292 610 226 551 C174 504 178 377 229 330 Z"/>
+          <path fill="url(#shell-brown)" d="M246 347 C287 312 396 307 452 344 C500 376 504 474 460 530 C422 577 310 580 249 532 C205 497 207 387 246 347 Z"/>
+          <path d="M349 319 L351 569 M225 427 C286 450 416 451 492 423 M244 347 C285 383 422 386 472 328 M249 532 C302 495 407 495 460 530" fill="none" opacity="0.7"/>
+          <path fill="url(#squirtle-blue)" d="M270 380 C245 414 242 490 261 548 C276 592 417 597 439 551 C458 510 456 417 428 382 Z"/>
+          <path fill="url(#squirtle-blue)" d="M269 413 C236 405 209 426 211 456 C213 479 232 495 257 496 L286 464 Z"/>
+          <path fill="url(#squirtle-blue)" d="M428 412 C462 404 489 425 488 455 C487 478 468 495 442 495 L414 463 Z"/>
+          <path fill="url(#squirtle-blue)" d="M283 529 C251 537 228 566 241 594 C254 621 295 614 322 582 Z"/>
+          <path fill="url(#squirtle-blue)" d="M416 529 C448 536 472 565 460 593 C448 620 407 614 379 582 Z"/>
+          <path fill="url(#squirtle-belly)" d="M309 413 C291 453 293 518 313 555 C331 583 378 584 398 555 C417 519 417 453 397 413 Z"/>
+          <path d="M300 475 C329 488 381 488 408 475 M305 528 C333 538 382 538 404 528" fill="none" opacity="0.55"/>
+          <path fill="url(#squirtle-blue)" d="M284 147 C327 121 392 121 436 145 C470 163 490 192 492 227 C494 239 493 250 492 259 C512 270 524 291 524 314 C524 346 501 370 470 382 C450 390 437 391 421 396 C382 407 326 401 287 386 C248 370 222 344 218 313 C215 289 225 270 241 255 C238 222 245 180 264 158 C270 153 276 150 284 147 Z"/>
+        </g>
+        <g class="eyes" fill="#202a2f" style="transform-box:fill-box;transform-origin:center">
+          <circle cx="307" cy="272" r="16"/>
+          <circle cx="437" cy="266" r="16"/>
+        </g>
+        <circle cx="270" cy="333" r="22" fill="#e792aa" opacity="0.78"/>
+        <circle cx="474" cy="326" r="22" fill="#e792aa" opacity="0.78"/>
+        <g fill="none" stroke="#202a2f" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M307 318 C328 334 359 337 386 330 C400 326 409 315 417 312 C425 309 432 313 431 320 C429 335 404 348 376 350 C347 352 322 343 307 329" stroke-width="10"/>
+          <path d="M454 297 L457 301 M470 294 L473 298" stroke-width="6"/>
+        </g>
+        <path d="M294 584 C300 592 309 596 320 596 M405 596 C416 596 425 592 431 584" fill="none" stroke="#242d32" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+    </div></div>
+  </div>
+</div>
+
+<script>
+/* ---------- TYPEWRITER ---------- */
+const roles=["Biostatistician","Postdoc @ UNC Radiology","EHR foundation models","Statistical & machine learning","Tennis · Badminton · Ping-pong 🏓","Your future fun professor 👾"];
+const tw=document.getElementById('tw');let ri=0,ci=0,del=false;
+(function type(){const w=roles[ri];tw.textContent=w.slice(0,ci);
+ if(!del&&ci<w.length){ci++;setTimeout(type,72);}
+ else if(!del&&ci===w.length){del=true;setTimeout(type,1500);}
+ else if(del&&ci>0){ci--;setTimeout(type,34);}
+ else{del=false;ri=(ri+1)%roles.length;setTimeout(type,320);}})();
+
+/* ---------- STARFIELD CANVAS ---------- */
+const cv=document.getElementById('stars'),cx=cv.getContext('2d');let W,H,pts=[];
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;
+ const n=Math.min(70,Math.floor(W*H/22000));pts=[];
+ for(let i=0;i<n;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,r:Math.random()*1.6+.5});}
+resize();addEventListener('resize',resize);
+let mx=-999,my=-999;
+function draw(){cx.clearRect(0,0,W,H);
+ for(const p of pts){p.x+=p.vx;p.y+=p.vy;
+   if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+   cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fillStyle='rgba(34,211,238,.55)';cx.fill();}
+ for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+   const a=pts[i],b=pts[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
+   if(d<118){cx.strokeStyle='rgba(120,150,220,'+(1-d/118)*.22+')';cx.lineWidth=.6;
+     cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke();}
+   const md=Math.hypot(a.x-mx,a.y-my);
+   if(md<150){cx.strokeStyle='rgba(255,210,63,'+(1-md/150)*.4+')';cx.lineWidth=.7;
+     cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(mx,my);cx.stroke();}}
+ if(!document.hidden)requestAnimationFrame(draw);}
+draw();document.addEventListener('visibilitychange',()=>{if(!document.hidden)draw()});
+
+/* ---------- CURSOR GLOW + card spotlight + mouse pos ---------- */
+const glow=document.getElementById('cursor-glow');
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;
+ glow.style.opacity=1;glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px';});
+addEventListener('mouseleave',()=>{glow.style.opacity=0;mx=my=-999;});
+document.querySelectorAll('.card').forEach(c=>c.addEventListener('mousemove',e=>{
+ const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px');}));
+
+/* ---------- TILT ---------- */
+document.querySelectorAll('.tilt').forEach(el=>{
+ el.addEventListener('mousemove',e=>{const r=el.getBoundingClientRect();
+  const rx=((e.clientY-r.top)/r.height-.5)*-8,ry=((e.clientX-r.left)/r.width-.5)*8;
+  el.style.transform=`translateY(-5px) perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg)`;});
+ el.addEventListener('mouseleave',()=>el.style.transform='');});
+
+/* ---------- SCROLL REVEAL ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---------- PROGRESS + NAV ACTIVE + BACKTOP ---------- */
+const prog=document.getElementById('progress'),bt=document.getElementById('backtop');
+const secs=[...document.querySelectorAll('section[id]')],links=[...document.querySelectorAll('.navlink')];
+addEventListener('scroll',()=>{
+ const st=scrollY,h=document.body.scrollHeight-innerHeight;
+ prog.style.width=(st/h*100)+'%';
+ bt.classList.toggle('show',st>500);
+ let cur=secs[0].id;for(const s of secs)if(scrollY>=s.offsetTop-140)cur=s.id;
+ links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+cur));
+});
+bt.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+
+/* ---------- THEME ---------- */
+const tb=document.getElementById('themeBtn');
+tb.onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
+ document.documentElement.setAttribute('data-theme',d?'light':'dark');tb.textContent=d?'☀️':'🌙';};
+
+/* ---------- PUBLICATION FILTER ---------- */
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+ document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');
+ const f=c.dataset.f;document.querySelectorAll('.pub').forEach(p=>{
+  const show=f==='all'||p.dataset.cat.includes(f);p.style.display=show?'':'none';});});
+
+/* ---------- reduced-motion flag ---------- */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- COUNT-UP stats ---------- */
+const cio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){countUp(e.target);cio.unobserve(e.target);}}),{threshold:.6});
+document.querySelectorAll('.stat .n').forEach(n=>cio.observe(n));
+function countUp(el){const m=el.textContent.trim().match(/^(\d+)(\+?)$/);if(!m)return;
+ const target=+m[1],suf=m[2];let cur=0;const step=Math.max(1,Math.ceil(target/26));
+ const s=el.closest('.stat');s.classList.add('pop');setTimeout(()=>s.classList.remove('pop'),600);
+ (function tick(){cur=Math.min(target,cur+step);el.textContent=cur+suf;if(cur<target)requestAnimationFrame(tick);})();}
+
+if(!RM){
+ /* magnetic buttons & icons */
+ document.querySelectorAll('.btn,.socials a,.nav-ctrl').forEach(el=>{
+  el.addEventListener('mousemove',e=>{const r=el.getBoundingClientRect();
+   el.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.3}px,${(e.clientY-r.top-r.height/2)*.4}px)`;});
+  el.addEventListener('mouseleave',()=>{el.style.transform='';});});
+ /* mouse parallax on hero sport orbs */
+ const orbs=[...document.querySelectorAll('.court .orb')],hero=document.querySelector('.hero');
+ if(hero)hero.addEventListener('mousemove',e=>{const dx=e.clientX/innerWidth-.5,dy=e.clientY/innerHeight-.5;
+  orbs.forEach((o,i)=>{const d=(i+1)*9;o.style.marginLeft=(dx*d)+'px';o.style.marginTop=(dy*d)+'px';});});
+ /* ambient fireflies */
+ const cols=['#ffd23f','#22d3ee','#a855f7'];
+ for(let i=0;i<14;i++){const f=document.createElement('div');f.className='firefly';
+  f.style.left=Math.random()*100+'vw';f.style.animationDuration=(9+Math.random()*10)+'s';
+  f.style.animationDelay=(-Math.random()*14)+'s';const c=cols[i%3];
+  f.style.background=c;f.style.boxShadow='0 0 8px '+c;document.body.appendChild(f);}
+}
+
+/* ---------- POKÉMON PLAYGROUND: wander + Poké Ball release / recall / shake ---------- */
+let PETS=[];
+(function(){
+ const zone=document.getElementById('playground');if(!zone)return;
+ const ball=document.getElementById('pokeball');
+ const pbBody=ball&&ball.querySelector('.pb-body');
+ const rand=(a,b)=>a+Math.random()*(b-a);
+ const zw=()=>zone.clientWidth,zh=()=>zone.clientHeight;
+ PETS=[...zone.querySelectorAll('.wpet')].map(el=>{
+  const s={el,hop:el.querySelector('.wpet-hop'),bubble:el.querySelector('.wspeech'),
+   say:(el.dataset.say||'…').split('|'),w:el.offsetWidth||80,x:0,y:0,tx:0,ty:0,sp:rand(.7,1.35),wait:Math.floor(rand(0,140)),bt:0,state:'out',sc:1};
+  s.x=rand(0,Math.max(1,zw()-s.w));s.y=rand(0,zh()*.5);pick(s);return s;});
+ function pick(s){s.tx=rand(0,Math.max(1,zw()-s.w));s.ty=rand(0,zh()*.5);}
+ function place(s){s.el.style.transform=`translate(${s.x}px,${-s.y}px) scale(${s.sc})`;}
+ function speak(s){if(s.state!=='out')return;s.bubble.textContent=s.say[Math.floor(Math.random()*s.say.length)];
+  s.bubble.classList.add('show');clearTimeout(s.bt);s.bt=setTimeout(()=>s.bubble.classList.remove('show'),1600);}
+ function doHop(s){if(s.state!=='out')return;s.hop.classList.add('hopping');setTimeout(()=>s.hop.classList.remove('hopping'),500);}
+ window.__petHop=doHop;window.__petSpeak=speak;
+ function sparkle(s){for(let i=0;i<7;i++){const p=document.createElement('div');p.className='sparkle';p.textContent='✨';
+  const a=rand(0,6.28),r=rand(8,26);p.style.left=(s.x+s.w/2)+'px';p.style.bottom=(s.y+42)+'px';
+  p.style.setProperty('--dx',(Math.cos(a)*r)+'px');p.style.setProperty('--dy',(-Math.abs(Math.sin(a))*r-14)+'px');
+  zone.appendChild(p);setTimeout(()=>p.remove(),640);}}
+ function ballShake(){if(!pbBody)return;pbBody.classList.remove('shaking');void pbBody.offsetWidth;pbBody.classList.add('shaking');
+  setTimeout(()=>pbBody.classList.remove('shaking'),1300);}
+ function burstAt(cx,cy){if(RM)return;const ems=['⭐','✨','🌟','⚡','💫'];
+  const w=document.createElement('div');w.className='pb-wave';w.style.left=cx+'px';w.style.top=cy+'px';
+  document.body.appendChild(w);setTimeout(()=>w.remove(),620);
+  for(let i=0;i<16;i++){const p=document.createElement('div');p.className='burst';p.textContent=ems[i%ems.length];
+   const a=(i/16)*6.283,r=44+Math.random()*72;p.style.left=cx+'px';p.style.top=cy+'px';
+   p.style.setProperty('--bx',(Math.cos(a)*r)+'px');p.style.setProperty('--by',(Math.sin(a)*r)+'px');
+   p.style.fontSize=(13+Math.random()*12)+'px';document.body.appendChild(p);setTimeout(()=>p.remove(),820);}}
+ function ballOpen(){if(!pbBody)return;pbBody.classList.remove('opening');void pbBody.offsetWidth;pbBody.classList.add('opening');
+  setTimeout(()=>pbBody.classList.remove('opening'),640);
+  if(ball){const r=ball.getBoundingClientRect();burstAt(r.left+r.width/2,r.top+r.height/2);}}
+ function recall(s){if(s.state!=='out')return;s.state='returning';s.el.classList.remove('moving');
+  s.bubble.classList.remove('show');s.el.style.filter='drop-shadow(0 0 12px #ff6a6a) brightness(1.35)';
+  let f=0;const dur=18;(function shrink(){f++;s.sc=Math.max(0,1-f/dur);s.y+=0.5;place(s);
+   if(f<dur)requestAnimationFrame(shrink);else{s.sc=0;s.state='in';s.el.style.filter='';place(s);sparkle(s);ballShake();setTimeout(()=>{if(s.state==='in')releaseOne(s);},13000+Math.random()*7000);}})();}
+ function releaseOne(s){if(s.state!=='in')return;
+  const zwv=zw(),zhv=zh();
+  const landX=rand(0,Math.max(1,zwv-s.w)),landY=rand(0,zhv*.4);
+  let sx=landX,sy=zhv*.55;                        // fallback start (mid-playground)
+  if(ball){const b=ball.getBoundingClientRect(),pl=zone.getBoundingClientRect(),ph=s.el.offsetHeight||s.w;
+   sx=(b.left+b.width/2)-pl.left-s.w/2;            // start x = ball center (pet-local)
+   sy=(pl.top+pl.height-6)-(b.top+b.height/2)-ph/2;} // start y = translate-up to reach the ball
+  s.state='materializing';s.x=sx;s.y=sy;s.sc=.3;place(s);
+  let f=0;const dur=34;(function fly(){f++;const p=f/dur,e=1-Math.pow(1-p,2);
+   s.x=sx+(landX-sx)*e;s.y=sy+(landY-sy)*e+Math.sin(p*Math.PI)*26;   // ease-out + gentle arc
+   s.sc=p<.85?.3+(p/.85)*.85:1.15-((p-.85)/.15)*.15;place(s);        // grow small→full with tiny land-bounce
+   if(f<dur)requestAnimationFrame(fly);
+   else{s.x=landX;s.y=landY;s.sc=1;s.tx=landX;s.ty=landY;s.state='out';s.wait=Math.floor(rand(8,30));place(s);sparkle(s);speak(s);}})();}
+ function releaseAll(){ballOpen();const tucked=PETS.filter(p=>p.state==='in');
+  if(tucked.length)tucked.forEach((s,i)=>setTimeout(()=>releaseOne(s),140+i*200));
+  else PETS.forEach((s,i)=>setTimeout(()=>{doHop(s);speak(s);},i*110));}
+ window.__release=releaseAll;
+ PETS.forEach(s=>s.el.addEventListener('click',()=>{speak(s);doHop(s);}));
+ if(ball)ball.addEventListener('click',()=>{const out=PETS.filter(p=>p.state==='out');if(out.length)recall(out[Math.floor(Math.random()*out.length)]);else releaseAll();});
+ PETS.forEach(place);
+ if(RM)return;
+ (function loop(){const W=zw(),H=zh();
+  for(const s of PETS){if(s.state!=='out')continue;
+   if(s.wait>0){s.wait--;s.el.classList.remove('moving');place(s);continue;}
+   s.el.classList.add('moving');
+   const dx=s.tx-s.x,dy=s.ty-s.y,d=Math.hypot(dx,dy)||1;
+   if(d<2.5){s.wait=Math.floor(rand(40,150));if(Math.random()<.4)doHop(s);if(Math.random()<.28)speak(s);s.sp=rand(.7,1.35);pick(s);}
+   else{s.x+=dx/d*s.sp;s.y+=dy/d*s.sp;}
+   s.x=Math.max(0,Math.min(W-s.w,s.x));s.y=Math.max(0,Math.min(H*.55,s.y));place(s);}
+  requestAnimationFrame(loop);})();
+ (function schedule(){setTimeout(()=>{
+   const out=PETS.filter(p=>p.state==='out');
+   if(out.length>=3){const n=(out.length>=4&&Math.random()<.5)?2:1;
+    for(let i=0;i<n;i++)setTimeout(()=>{const cand=PETS.filter(p=>p.state==='out');
+     if(cand.length>2){recall(cand[Math.floor(Math.random()*cand.length)]);}},i*1500);}
+   schedule();},14000+Math.random()*8000);})();
+})();
+
+/* ---------- KONAMI EASTER EGG ---------- */
+const seq=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];let k=0;
+const toast=document.getElementById('toast');
+addEventListener('keydown',e=>{
+ const key=e.key.length===1?e.key.toLowerCase():e.key;
+ k=(key===seq[k])?k+1:(key===seq[0]?1:0);
+ if(k===seq.length){k=0;thunderbolt();}});
+function thunderbolt(){
+ toast.textContent='⚡ THUNDERBOLT! The whole gang joins in! ⚡';toast.classList.add('show');
+ setTimeout(()=>toast.classList.remove('show'),3200);
+ if(window.__release)window.__release();
+ const ems=['⚡','🔥','💧','🌱','🎾','🏸','🏓','⭐'];
+ for(let i=0;i<70;i++){const b=document.createElement('div');b.className='bolt';
+  b.textContent=ems[Math.floor(Math.random()*ems.length)];
+  b.style.left=Math.random()*100+'vw';b.style.animationDuration=(1.6+Math.random()*2.2)+'s';
+  b.style.fontSize=(16+Math.random()*26)+'px';b.style.animationDelay=(Math.random()*.8)+'s';
+  document.body.appendChild(b);setTimeout(()=>b.remove(),4200);}
+ PETS.forEach(s=>{s.el.style.filter='drop-shadow(0 0 20px #ffd23f) brightness(1.25)';
+  if(window.__petHop)window.__petHop(s);setTimeout(()=>s.el.style.filter='',900);});}
+
+document.getElementById('yr').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
